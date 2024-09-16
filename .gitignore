@@ -24,6 +24,7 @@ run
 # Files from Forge MDK
 forge*changelog.txt
 
+data-collection-mod/.vscode/*
 data-collection-mod/.vscode/tasks.json
 data-collection-mod/.vscode/launch.json
 data-collection-mod/.vscode/settings.json
