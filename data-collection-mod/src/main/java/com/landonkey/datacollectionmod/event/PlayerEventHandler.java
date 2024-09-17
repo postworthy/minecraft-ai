@@ -1,15 +1,29 @@
 package com.landonkey.datacollectionmod.event;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.player.AnvilRepairEvent;
+import net.minecraftforge.event.entity.player.ArrowLooseEvent;
+import net.minecraftforge.event.entity.player.ArrowNockEvent;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
+import net.minecraftforge.event.entity.player.BonemealEvent;
+import net.minecraftforge.event.entity.player.PlayerContainerEvent;
+import net.minecraftforge.event.entity.player.PlayerDestroyItemEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent.ItemCraftedEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent.ItemPickupEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.event.entity.player.PlayerSleepInBedEvent;
+import net.minecraftforge.event.entity.player.PlayerWakeUpEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -143,6 +157,263 @@ public class PlayerEventHandler {
             // Update the stored previous position
             playerPositions.put(playerUUID, currentPos);
         }
+    }
+
+    @SubscribeEvent
+    public static void onItemCrafted(ItemCraftedEvent event) {
+        Player player = event.getEntity();
+        ItemStack craftedItem = event.getCrafting();
+
+        // Collect data
+        Map<String, Object> data = collectCommonData(player, player.level(), player.blockPosition());
+
+        // Action Mapping
+        Map<String, Object> actionData = new HashMap<>();
+        actionData.put("function", "craft_item");
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("item", craftedItem.getItem().getDescription().toString());
+        parameters.put("count", craftedItem.getCount());
+
+        // Optionally, collect ingredients
+        List<String> ingredients = new ArrayList<>();
+        player.getInventory().items.forEach(stack -> {
+            if (!stack.isEmpty()) {
+                ingredients.add(craftedItem.getItem().getDescription().toString());
+            }
+        });
+        parameters.put("ingredients", ingredients);
+        actionData.put("parameters", parameters);
+
+        // Add action data
+        data.put("action", actionData);
+
+        // Write data to YAML file
+        writeDataToFile(data);
+    }
+
+    @SubscribeEvent
+    public static void onAnvilRepair(AnvilRepairEvent event) {
+        Player player = event.getEntity();
+        ItemStack resultItem = event.getOutput();
+        ItemStack leftInput = event.getLeft();
+        ItemStack rightInput = event.getRight();
+
+        // Collect data
+        Map<String, Object> data = collectCommonData(player, player.level(), player.blockPosition());
+
+        // Action Mapping
+        Map<String, Object> actionData = new HashMap<>();
+        actionData.put("function", "anvil_repair");
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("result_item", resultItem.getItem().getDescription().toString());
+        parameters.put("left_input", leftInput.getItem().getDescription().toString());
+        parameters.put("right_input", rightInput.getItem().getDescription().toString());
+
+        actionData.put("parameters", parameters);
+
+        // Add action data
+        data.put("action", actionData);
+
+        // Write data to YAML file
+        writeDataToFile(data);
+    }
+
+    @SubscribeEvent
+    public static void onPlayerDestroyItem(PlayerDestroyItemEvent event) {
+        Player player = event.getEntity();
+        ItemStack destroyedItem = event.getOriginal();
+
+        // Collect data
+        Map<String, Object> data = collectCommonData(player, player.level(), player.blockPosition());
+
+        // Action Mapping
+        Map<String, Object> actionData = new HashMap<>();
+        actionData.put("function", "destroy_item");
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("item", destroyedItem.getItem().getDescription().toString());
+
+        actionData.put("parameters", parameters);
+
+        // Add action data
+        data.put("action", actionData);
+
+        // Write data to YAML file
+        writeDataToFile(data);
+    }
+
+    @SubscribeEvent
+    public static void onItemPickup(ItemPickupEvent event) {
+        Player player = event.getEntity();
+        ItemStack pickedUpItem = event.getStack();
+
+        // Collect data
+        Map<String, Object> data = collectCommonData(player, player.level(), player.blockPosition());
+
+        // Action Mapping
+        Map<String, Object> actionData = new HashMap<>();
+        actionData.put("function", "pickup_item");
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("item", pickedUpItem.getItem().getDescription().toString());
+        parameters.put("count", pickedUpItem.getCount());
+
+        actionData.put("parameters", parameters);
+
+        // Add action data
+        data.put("action", actionData);
+
+        // Write data to YAML file
+        writeDataToFile(data);
+    }
+
+    @SubscribeEvent
+    public static void onPlayerContainerEvent(PlayerContainerEvent event) {
+        Player player = event.getEntity();
+    
+        // Collect data
+        Map<String, Object> data = collectCommonData(player, player.level(), player.blockPosition());
+    
+        // Action Mapping
+        Map<String, Object> actionData = new HashMap<>();
+        actionData.put("function", "container_event");
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("container", event.getContainer().getClass().getSimpleName());
+    
+        actionData.put("parameters", parameters);
+    
+        // Add action data
+        data.put("action", actionData);
+    
+        // Write data to YAML file
+        writeDataToFile(data);
+    }   
+
+    @SubscribeEvent
+    public static void onArrowNock(ArrowNockEvent event) {
+        Player player = event.getEntity();
+        ItemStack bowItem = event.getBow();
+
+        // Collect data
+        Map<String, Object> data = collectCommonData(player, player.level(), player.blockPosition());
+
+        // Action Mapping
+        Map<String, Object> actionData = new HashMap<>();
+        actionData.put("function", "start_drawing_bow");
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("bow", bowItem.getItem().getDescription().toString());
+
+        actionData.put("parameters", parameters);
+
+        // Add action data
+        data.put("action", actionData);
+
+        // Write data to YAML file
+        writeDataToFile(data);
+    }
+
+    @SubscribeEvent
+    public static void onArrowLoose(ArrowLooseEvent event) {
+        Player player = event.getEntity();
+        ItemStack bowItem = event.getBow();
+        int charge = event.getCharge();
+
+        // Calculate the power of the shot based on the charge
+        float power = charge / 20.0f; // Max charge time is 20 ticks
+        power = (power * power + power * 2.0f) / 3.0f;
+
+        // Clamp power to maximum of 1.0f
+        if (power > 1.0f) {
+            power = 1.0f;
+        }
+
+        // Collect data
+        Map<String, Object> data = collectCommonData(player, player.level(), player.blockPosition());
+
+        // Action Mapping
+        Map<String, Object> actionData = new HashMap<>();
+        actionData.put("function", "release_arrow");
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("bow", bowItem.getItem().getDescription().toString());
+        parameters.put("charge", charge);
+        parameters.put("power", power);
+
+        actionData.put("parameters", parameters);
+
+        // Add action data
+        data.put("action", actionData);
+
+        // Write data to YAML file
+        writeDataToFile(data);
+    }
+
+    @SubscribeEvent
+    public static void onBonemealUse(BonemealEvent event) {
+        Player player = event.getEntity();
+        BlockPos pos = event.getPos();
+        Block block = event.getBlock().getBlock();
+
+        // Collect data
+        Map<String, Object> data = collectCommonData(player, player.level(), player.blockPosition());
+
+        // Action Mapping
+        Map<String, Object> actionData = new HashMap<>();
+        actionData.put("function", "use_bonemeal");
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("target_block", block.getDescriptionId());
+        parameters.put("position", String.format("x=%d, y=%d, z=%d", pos.getX(), pos.getY(), pos.getZ()));
+
+        actionData.put("parameters", parameters);
+
+        // Add action data
+        data.put("action", actionData);
+
+        // Write data to YAML file
+        writeDataToFile(data);
+    }
+
+
+    @SubscribeEvent
+    public static void onPlayerSleep(PlayerSleepInBedEvent event) {
+        Player player = event.getEntity();
+        BlockPos bedPos = event.getPos();
+
+        // Collect data
+        Map<String, Object> data = collectCommonData(player, player.level(), player.blockPosition());
+
+        // Action Mapping
+        Map<String, Object> actionData = new HashMap<>();
+        actionData.put("function", "player_sleep");
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("bed_position", String.format("x=%d, y=%d, z=%d", bedPos.getX(), bedPos.getY(), bedPos.getZ()));
+
+        actionData.put("parameters", parameters);
+
+        // Add action data
+        data.put("action", actionData);
+
+        // Write data to YAML file
+        writeDataToFile(data);
+    }
+
+    @SubscribeEvent
+    public static void onPlayerWakeUp(PlayerWakeUpEvent event) {
+        Player player = event.getEntity();
+
+        // Collect data
+        Map<String, Object> data = collectCommonData(player, player.level(), player.blockPosition());
+
+        // Action Mapping
+        Map<String, Object> actionData = new HashMap<>();
+        actionData.put("function", "player_wake");
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("wake_immediately", event.wakeImmediately());
+
+        actionData.put("parameters", parameters);
+
+        // Add action data
+        data.put("action", actionData);
+
+        // Write data to YAML file
+        writeDataToFile(data);
     }
 
     private static String getMovementDirection(double dx, double dz, float yaw) {
