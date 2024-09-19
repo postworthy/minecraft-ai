@@ -370,7 +370,6 @@ public class PlayerEventHandler {
         writeDataToFile(data);
     }
 
-
     @SubscribeEvent
     public static void onPlayerSleep(PlayerSleepInBedEvent event) {
         Player player = event.getEntity();
