@@ -39,4 +39,4 @@ minecraft-ai-player-mod/.vscode/
 data-collection-mod/data/
 data-processing/input/
 data-processing/output/
-
+data-processing/docker_models_cache
