@@ -22,8 +22,6 @@ declare -A TYPE_OUTTYPE_MAP=(
     ["f16"]="f16"
     ["bf16"]="bf16"
     ["q8_0"]="q8_0"
-    #["q5_k_m"]="bf16"
-    #["q4_k_m"]="q8_0"
 )
 
 # Iterate over each model-* directory in the output directory
