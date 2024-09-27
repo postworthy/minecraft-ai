@@ -111,7 +111,11 @@ def main():
             ),
         )
 
-        training_output = trainer.train()
+        if checkpoint_path:
+            training_output = trainer.train(resume_from_checkpoint=checkpoint_path)
+        else:
+            training_output = trainer.train()
+
         train_loss = training_output.metrics.get('train_loss')
         if train_loss is not None:
             final_train_loss = train_loss
