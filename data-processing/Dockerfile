@@ -23,10 +23,15 @@ RUN pip3 install --no-deps "trl<0.9.0" peft accelerate bitsandbytes
 RUN pip3 install -U xformers --index-url https://download.pytorch.org/whl/cu121
 RUN pip3 install PyYAML
 
+# Ollama via llama.cpp - ggml conversion tools
+RUN git clone --recursive https://github.com/ggerganov/llama.cpp
+RUN cd llama.cpp && make clean && make all -j
+
+#Custom Python
 ADD ./sliding_window.py .
 ADD ./format_data_for_training.py .
 ADD ./train.py .
 ADD ./eval.py .
 ADD ./util.py .
 ADD ./create_dataset.py .
-ADD ./save_gguf.py .
+ADD ./save_gguf.sh .
