@@ -111,7 +111,7 @@ def main():
             ),
         )
 
-        if checkpoint_path:
+        if i == 0 and checkpoint_path:
             training_output = trainer.train(resume_from_checkpoint=checkpoint_path)
         else:
             training_output = trainer.train()
