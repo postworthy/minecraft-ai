@@ -129,8 +129,11 @@ def main():
 
     model_dir = os.path.join(output_dir, f'model-for-{dataset_name}-{run_id}-loss-{final_train_loss:.4f}')
     print(f"Saving model to {model_dir}...")
-
     model.save_pretrained_merged(model_dir, tokenizer, save_method="merged_16bit")
+
+    model_dir_gguf = os.path.join(output_dir, f'model-for-{dataset_name}-{run_id}-loss-{final_train_loss:.4f}-gguf')
+    print(f"Saving model to {model_dir_gguf}...")
+    model.save_pretrained_gguf(model_dir_gguf, tokenizer)
 
 
     print("Running Final Eval...")
