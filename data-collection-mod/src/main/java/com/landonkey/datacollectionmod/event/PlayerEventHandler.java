@@ -46,6 +46,8 @@ public class PlayerEventHandler {
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Map<UUID, Vec3> playerPositions = new HashMap<>();
+    private static final Map<UUID, Boolean> playerWasOnGround = new HashMap<>();
+
 
     @SubscribeEvent
     public static void onPlayerInteract(PlayerInteractEvent event) {
@@ -124,9 +126,12 @@ public class PlayerEventHandler {
         Player player = event.player;
         UUID playerUUID = player.getUUID();
         Vec3 currentPos = player.getPosition(0);
-
         Vec3 prevPos = playerPositions.get(playerUUID);
+        boolean wasOnGround = playerWasOnGround.getOrDefault(playerUUID, true);
+        boolean isOnGround = player.onGround();
+        playerWasOnGround.put(playerUUID, isOnGround);
 
+        //Movement capture
         if (prevPos == null || !currentPos.equals(prevPos)) {
             // The player has moved
 
@@ -146,6 +151,7 @@ public class PlayerEventHandler {
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("direction", direction);
             parameters.put("distance", distance);
+            parameters.put("jumping", (!isOnGround && wasOnGround && player.getDeltaMovement().y > 0) ? "true" : "false");
             actionData.put("parameters", parameters);
 
             // Add action data
