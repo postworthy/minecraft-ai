@@ -20,7 +20,7 @@ fi
 # Define the types and their corresponding outtype values
 declare -A TYPE_OUTTYPE_MAP=(
     ["f16"]="f16"
-    ["bf16"]="bf16"
+    #["bf16"]="bf16"
     ["q8_0"]="q8_0"
 )
 
