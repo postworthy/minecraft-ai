@@ -144,7 +144,8 @@ dependencies {
     
     // Hack fix for now, force jopt-simple to be exactly 5.0.4 because Mojang ships that version, but some transitive dependencies request 6.0+ 
     implementation('net.sf.jopt-simple:jopt-simple:5.0.4') { version { strictly '5.0.4' } }
-    implementation 'org.yaml:snakeyaml:2.0' // Use the latest version available
+    implementation('org.yaml:snakeyaml:2.0') // Use the latest version available
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.
@@ -182,6 +183,11 @@ tasks.named('jar', Jar).configure {
     // Include the SnakeYAML dependency in the JAR
     from {
         configurations.runtimeClasspath.findAll { it.name.contains('snakeyaml') }.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+
+    // Include the OkHttp dependency in the JAR
+    from {
+        configurations.runtimeClasspath.findAll { it.name.contains('okhttp3') }.collect { it.isDirectory() ? it : zipTree(it) }
     }
 
     // Exclude unnecessary files to prevent conflicts
