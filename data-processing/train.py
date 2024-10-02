@@ -45,18 +45,31 @@ def apply_function_filter(dataset, limit=0):
 
     return dataset.select(filtered_dataset_idx)
 
-def get_dataset(dataset_dir, function_filter_limit):
-    if os.path.exists(dataset_dir):
-        print(f"Dataset already exists at {dataset_dir}. Loading dataset...")
-        dataset = Dataset.load_from_disk(dataset_dir)
-        print("Dataset loaded successfully.")
+def get_dataset(dataset_dirs, function_filter_limit):
+    datasets = []
+
+    for dataset_dir in dataset_dirs:
+
+        if os.path.exists(dataset_dir):
+            print(f"Dataset exists at {dataset_dir}. Loading dataset...")
+            dataset = Dataset.load_from_disk(dataset_dir)
+            print(f"Dataset loaded successfully from {dataset_dir}.")
+
+            #The len(dataset) > 1000 is a bit of a hack to ensure that the story datasets do not get filters applied.
+            if len(dataset) > 5000 and function_filter_limit > 0:
+                print(f"Applying function filter to dataset ({function_filter_limit}).")
+                dataset = apply_function_filter(dataset, function_filter_limit)
+
+            datasets.append(dataset)
+        else:
+            raise Exception(f"No dataset found at {dataset_dir}")
+
+    if len(datasets) > 1:
+        print("Combining multiple datasets...")
+        dataset = concatenate_datasets(datasets)
+        print(f"{len(datasets)} datasets combined successfully.")
     else:
-        raise Exception(f"No dataset found at {dataset_dir}")
-
-
-    if function_filter_limit > 0:
-        print(f"Applying function filter to dataset ({function_filter_limit}).")
-        dataset = apply_function_filter(dataset, function_filter_limit)
+        dataset = datasets[0]
 
     print("First few rows in dataset:")
     for idx in range(min(5, len(dataset))):
@@ -74,7 +87,7 @@ def main():
     parser.add_argument('--input-dir', type=str, default="./input", help='Path to the input directory containing JSON files.')
     parser.add_argument('--output-dir', type=str, default="./output", help='Path to the output directory to save combined files.')
     parser.add_argument('--checkpoint-path', type=str, default=None, help='Path to a model checkpoint to load.')
-    parser.add_argument('--dataset-name', type=str, default="dataset", help='Prefix to LLM training prompt.')
+    parser.add_argument('--dataset-names', type=str, nargs='+', default=["dataset"], help='Dataset(s) used in training model.')
     parser.add_argument('--apply-function-filter', type=int, default=0, help='Filter functions to N occurences.')
     parser.add_argument('--epochs', type=int, default=1, help='Training Epochs.')
 
@@ -82,8 +95,9 @@ def main():
 
     input_dir = args.input_dir
     output_dir = args.output_dir
-    dataset_name = args.dataset_name
-    dataset_dir = os.path.join(output_dir, dataset_name)
+    dataset_names = args.dataset_names
+    dataset_names_combined = "_".join(args.dataset_names)
+    dataset_dirs = [os.path.join(output_dir, dataset_name) for dataset_name in dataset_names]
     checkpoint_path = args.checkpoint_path
     function_filter_limit = args.apply_function_filter
     epochs = args.epochs
@@ -98,9 +112,9 @@ def main():
 
     for i in range(epochs):
         print(f"Training epoch {i+1}")
-        checkpoint_dir = f"{output_dir}/checkpoints-{dataset_name}-{run_id}-{i}"
+        checkpoint_dir = f"{output_dir}/checkpoints-{dataset_names_combined}-{run_id}-{i}"
         os.makedirs(checkpoint_dir, exist_ok=True)
-        current_dataset = get_dataset(dataset_dir, function_filter_limit)
+        current_dataset = get_dataset(dataset_dirs, function_filter_limit)
         trainer=SFTTrainer(
             model=model,
             tokenizer=tokenizer,
@@ -137,17 +151,17 @@ def main():
         else:
             print(f"Warning: 'train_loss' not found in metrics for epoch {i+1}")
 
-    
-        print(f"Running eval after epoch {i+1}...")
-        run_eval(model, tokenizer, current_dataset)
+        if i % 5:    
+            print(f"Running eval after epoch {i+1}...")
+            run_eval(model, tokenizer, current_dataset)
 
 
-    model_dir = os.path.join(output_dir, f'model-for-{dataset_name}-{run_id}-loss-{final_train_loss:.4f}-max-seq-{max_seq_length}')
+    model_dir = os.path.join(output_dir, f'model-for-{dataset_names_combined}-{run_id}-loss-{final_train_loss:.4f}-max-seq-{max_seq_length}')
     print(f"Saving model to {model_dir}...")
     model.save_pretrained_merged(model_dir, tokenizer, save_method="merged_16bit")
 
-    print("Running Final Eval...")
-    run_eval(model, tokenizer, Dataset.load_from_disk(dataset_dir))
+    #print("Running Final Eval...")
+    #run_eval(model, tokenizer, Dataset.load_from_disk(dataset_dir))
 
 if __name__ == "__main__":
     main()
