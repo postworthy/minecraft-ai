@@ -29,7 +29,7 @@ public class PlayerEventHandler {
     private static final Map<UUID, Vec3> playerPositions = new HashMap<>();
     private static final Map<UUID, Integer> playerTickCounters = new HashMap<>();
     private static final int TICKS_PER_SECOND = 20;
-    private static final String PRE = "Below I have provided a short history of minecraft game data and player actions, act as an expert minecraft player and suggest the next appropriate action to be taken next based on the game data provided. Currently the only function available is the `move` action. Prefer forward movement over other movement actions.\n\n";
+    private static final String PRE = "Act as an expert Minecraft player who can understand a player's actions by viewing the game state at the time the action was given. I will provide you with the game state and the action taken in YAML form, and you will tell me why a player may have taken the given action using your knowledge of Minecraft and the game state, be highly detailed and provide your reasoning step by step for the sample data below. Always include in your respons a yml block with your next predicted action.\n\n";
     
     public static String PREVIOUS_PROMPT = "";
 

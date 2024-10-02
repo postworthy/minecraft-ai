@@ -17,6 +17,9 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.GsonBuilder;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class LLMResponseHandler {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -34,17 +37,33 @@ public class LLMResponseHandler {
         try {
             JsonObject responseObject = GSON.fromJson(jsonResponse, JsonObject.class);
             if (responseObject.has("response")) {
-                String yamlResponse = responseObject.get("response").getAsString();
-                LOGGER.info("Extracted response:\n" + yamlResponse);
-                PlayerEventHandler.PREVIOUS_PROMPT = PlayerEventHandler.PREVIOUS_PROMPT + yamlResponse + "\n\n";
-                Instruction instruction = Instruction.fromYaml(yamlResponse);
-                switch (instruction.action) {
-                    case "move":
-                        ActionExecutor.movePlayer(instruction.parameters.direction, instruction.parameters.distance);
+                String fullResponse = responseObject.get("response").getAsString();
+
+                // Define regex patterns to extract content between ```yml or ```yaml
+                String yamlPattern = "```(?:yml|yaml)([\\s\\S]*?)```";
+                Pattern pattern = Pattern.compile(yamlPattern);
+                Matcher matcher = pattern.matcher(fullResponse);
+
+                if (matcher.find()) {
+                    String yamlResponse = matcher.group(1).trim(); // Get the captured group (YAML content)
+                    LOGGER.info("Extracted YAML response:\n" + yamlResponse);
+
+                    PlayerEventHandler.PREVIOUS_PROMPT = PlayerEventHandler.PREVIOUS_PROMPT + yamlResponse + "\n\n";
+
+                    Instruction instruction = Instruction.fromYaml(yamlResponse);
+                    switch (instruction.action) {
+                        case "move":
+                            ActionExecutor.movePlayer(instruction.parameters.direction,
+                                    instruction.parameters.distance);
+                            break;
+                        // Add more cases if needed
+                    }
+                } else {
+                    throw new IllegalArgumentException("No valid YAML block found in the response.");
                 }
             }
         } catch (Exception ex) {
-            LOGGER.error(ex.toString());
+            LOGGER.error("Error handling response: " + ex.toString());
         }
     }
 
