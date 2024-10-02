@@ -18,15 +18,30 @@ max_seq_length = 2048
 
 def apply_function_filter(dataset, limit=0):
     functions = list(get_unique_function(dataset).keys())
-    filtered_dataset_idx = []
+    function_filters = []
+    
+    if limit == 0:
+        limit == 100
+
     for function_name in functions:
-        print(f"Filtering function {function_name} with limit={limit}")
-        function_dataset_idx = list(get_dataset_idx_by_function_name(dataset, function_name, limit))
+        if function_name == "move":
+            function_filters.append((function_name, limit*.2, "left"))
+            function_filters.append((function_name, limit*.2, "right"))
+            function_filters.append((function_name, limit, "forward"))
+            function_filters.append((function_name, limit*.2, "backward"))
+        else:
+            function_filters.append((function_name, limit, None))
+
+    filtered_dataset_idx = []
+    for function_filter in function_filters:
+        print(f"Filtering function {function_filter[0]} with limit={function_filter[1]}")
+
+        function_dataset_idx = list(get_dataset_idx_by_function_name(dataset, function_filter[0], function_filter[1], function_filter[2]))
         if len(function_dataset_idx) > 0:
-            print(f"{len(function_dataset_idx)} items selected for {function_name}")
+            print(f"{len(function_dataset_idx)} items selected for {function_filter[0]}")
             filtered_dataset_idx.extend(function_dataset_idx)
         else:
-            print(f"{len(function_dataset_idx)} items selected for {function_name}")
+            print(f"{len(function_dataset_idx)} items selected for {function_filter[0]}")
 
     return dataset.select(filtered_dataset_idx)
 
@@ -127,7 +142,7 @@ def main():
         run_eval(model, tokenizer, current_dataset)
 
 
-    model_dir = os.path.join(output_dir, f'model-for-{dataset_name}-{run_id}-loss-{final_train_loss:.4f}')
+    model_dir = os.path.join(output_dir, f'model-for-{dataset_name}-{run_id}-loss-{final_train_loss:.4f}-max-seq-{max_seq_length}')
     print(f"Saving model to {model_dir}...")
     model.save_pretrained_merged(model_dir, tokenizer, save_method="merged_16bit")
 

@@ -1,23 +1,6 @@
 import os
-import re
 import argparse
-from datetime import datetime
-
-# Define a function to extract the timestamp from the filename
-def extract_timestamp(filename):
-    # Regex to match the timestamp in the filename
-    match = re.search(r'data_(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.\d+)\.yaml', filename)
-    if match:
-        timestamp_str = match.group(1)
-        # Split the timestamp into the datetime part and microseconds
-        dt_part, microseconds = timestamp_str.split('.')
-        # Truncate microseconds to 6 digits if it's longer
-        microseconds = microseconds[:6]
-        # Reconstruct the timestamp string with the truncated microseconds
-        truncated_timestamp_str = f"{dt_part}.{microseconds}"
-        # Convert the string to a datetime object
-        return datetime.strptime(truncated_timestamp_str, '%Y-%m-%dT%H-%M-%S.%f')
-    return None
+from util import extract_timestamp
 
 
 # Define a function to read the content of a file

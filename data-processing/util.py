@@ -2,8 +2,26 @@ import os
 from unsloth.chat_templates import get_chat_template
 from unsloth import FastLanguageModel
 import random
+import re
+from datetime import datetime
 
 max_seq_length = 2048
+
+# Define a function to extract the timestamp from the filename
+def extract_timestamp(filename):
+    # Regex to match the timestamp in the filename
+    match = re.search(r'data_(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.\d+)\.yaml', filename)
+    if match:
+        timestamp_str = match.group(1)
+        # Split the timestamp into the datetime part and microseconds
+        dt_part, microseconds = timestamp_str.split('.')
+        # Truncate microseconds to 6 digits if it's longer
+        microseconds = microseconds[:6]
+        # Reconstruct the timestamp string with the truncated microseconds
+        truncated_timestamp_str = f"{dt_part}.{microseconds}"
+        # Convert the string to a datetime object
+        return datetime.strptime(truncated_timestamp_str, '%Y-%m-%dT%H-%M-%S.%f')
+    return None
 
 def apply_template(tokenizer, messages):
     texts = [tokenizer.apply_chat_template(message, tokenize=False, add_generation_prompt=False) for message in messages]
@@ -26,7 +44,9 @@ def load_models(checkpoint_path=None):
             print("No valid checkpoint provided. Initializing model from pre-trained weights.")
 
         model, tokenizer = FastLanguageModel.from_pretrained(
-            model_name="unsloth/Meta-Llama-3.1-8B-bnb-4bit",
+            #model_name="unsloth/Meta-Llama-3.1-8B-bnb-4bit",
+            #model_name="unsloth/Llama-3.2-3B-bnb-4bit",
+            model_name="unsloth/Llama-3.2-1B-Instruct-bnb-4bit",
             max_seq_length=max_seq_length,
             load_in_4bit=True,
             dtype=None,
@@ -73,7 +93,8 @@ def get_unique_function(dataset):
         if 'function: ' in assistant_text:
             # Extract the function name
             # Assuming the function name follows 'function: ' and is up to the next newline or period
-            function_name = assistant_text.split('function: ')[1].split('\n')[0].split('.')[0].strip()
+            _, _, rest = assistant_text.rpartition("function: ")
+            function_name = rest.split('\n')[0].split('.')[0].strip()
 
             # If we haven't already collected an example for this function, add it
             if function_name not in unique_functions:
@@ -86,7 +107,7 @@ def get_unique_function(dataset):
     
     return unique_functions
 
-def get_dataset_idx_by_function_name(dataset, function_name, limit=0):
+def get_dataset_idx_by_function_name(dataset, function_name, limit=0, filter=None):
     matches=0
     indices = list(range(len(dataset)))
     random.shuffle(indices)
@@ -98,10 +119,11 @@ def get_dataset_idx_by_function_name(dataset, function_name, limit=0):
         if assistant_token in input_text:
             _, rest = input_text.split(assistant_token)
             if "function: " in rest:
-                _, rest = rest.split("function: ")
+                _, _, rest = rest.rpartition("function: ")
                 if function_name in rest:
-                    matches += 1
-                    yield idx
+                    if filter == None or filter in rest:
+                        matches += 1
+                        yield idx
             
             if limit > 0 and matches >= limit:
                 return

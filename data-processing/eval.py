@@ -35,7 +35,7 @@ def run_eval(model, tokenizer, dataset):
             outputs = model.generate(
                 input_ids=inputs['input_ids'],
                 attention_mask=inputs['attention_mask'],
-                max_new_tokens=200,
+                max_new_tokens=2048,
                 do_sample=True,
                 top_p=0.95,
                 temperature=0.8,
