@@ -58,7 +58,7 @@ def get_action_yaml(text):
         human_value = text[:last_action_index]
         gpt_value = text[last_action_index:]
         
-        return f"\n\{next_action_preprompt()}:\n\n```yml\n{gpt_value}\n```"
+        return f"{next_action_preprompt()}:\n\n```yml\n{gpt_value}\n```"
     else:
         raise Exception("action section not found")
 
@@ -149,8 +149,8 @@ def process_files(model, input_dir, output_dir, keyword=None):
                         existing_response = output_file.read()
                         yield (
                                 prompt, 
-                                existing_response + action_yaml,
-                                get_summary(model, base_filename, output_dir, existing_response) + action_yaml,
+                                existing_response + "\n\n" + action_yaml,
+                                get_summary(model, base_filename, output_dir, existing_response) + "\n\n" + action_yaml,
                                 action_yaml
                             )
 
@@ -165,8 +165,8 @@ def process_files(model, input_dir, output_dir, keyword=None):
 
                 yield (
                         prompt, 
-                        response + action_yaml,
-                        get_summary(model, base_filename, output_dir, response) + action_yaml,
+                        response + "\n\n" + action_yaml,
+                        get_summary(model, base_filename, output_dir, response) + "\n\n" + action_yaml,
                         action_yaml
                     )
 

@@ -34,7 +34,7 @@ def apply_function_filter(dataset, limit=0):
 
     filtered_dataset_idx = []
     for function_filter in function_filters:
-        print(f"Filtering function {function_filter[0]} with limit={function_filter[1]}")
+        print(f"Filtering function {function_filter[0]} with filter=`{function_filter[0]} + {function_filter[2] or 'None'}` limit={function_filter[1]}")
 
         function_dataset_idx = list(get_dataset_idx_by_function_name(dataset, function_filter[0], function_filter[1], function_filter[2]))
         if len(function_dataset_idx) > 0:
